@@ -1,3 +1,4 @@
+import * as math from "mathjs";
 const mmap = math.map;
 const rand = math.random;
 const transp = math.transpose;
@@ -19,8 +20,8 @@ class NeuralNetwork {
         // WIH - weights of input-to-hidden layer
         // WHO - weights of hidden-to-output layer
         // If weights are not passed in, they will be randomly generated
-        this.wih = wih || sub(mat(rand([hiddennodes, inputnodes])), 0.5);
-        this.who = who || sub(mat(rand([outputnodes, hiddennodes])), 0.5);
+        this.wih = wih || sub(mat(rand([hiddenNodes, inputNodes])), 0.5);
+        this.who = who || sub(mat(rand([outputNodes, hiddenNodes])), 0.5);
     
         // Sigmoid Function - Applies activation function (2nd param) to each element of input matrix (1st function)
         this.act = (matrix) => mmap(matrix, (x) => 1 / (1 + Math.exp(-x)));
@@ -28,7 +29,10 @@ class NeuralNetwork {
 
     cache = { loss: [] };
 
-    static normalizeData = (data) => { /*...*/ }
+    static normalizeData = (data) => {
+        // Convert from 0-255 to 0.01 to 1.00 to prevent saturation in sigmoid
+        return data.map((e) => (e / 255) * 0.99 + 0.01);
+    };
 
     // Forward Propagation
     forward = (input) => { 
@@ -71,7 +75,7 @@ class NeuralNetwork {
     *   -- = -- -- --
     *   dW   dA dZ dW
     */
-    backward = (input, target) => { 
+    backward = (target) => { 
         const who = this.who;
         const input = this.cache.input;
         const h_out = this.cache.h_out;
@@ -99,7 +103,7 @@ class NeuralNetwork {
 
         this.cache.dwih = dwih;
         this.cache.dwho = dwho;
-        this.cache.loss.push(sum(sqr(dEdA)));
+        // this.cache.loss.push(sum(mmap(dEdA,sqr)));
     };
 
     update = () => {
@@ -107,9 +111,10 @@ class NeuralNetwork {
         const who = this.who;
         const dwih = this.cache.dwih;
         const dwho = this.cache.dwho;
-        const r = this.learningrate;
+        const r = this.learningRate;
 
         // Update the weights based on the calculated errors
+        this.wih = e("wih + (r .* dwih)", { wih, r, dwih });
         this.wih = e("wih + (r .* dwih)", { wih, r, dwih });
         this.who = e("who + (r .* dwho)", { who, r, dwho });
     };
