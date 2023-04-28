@@ -46,8 +46,9 @@ function test(inTraining = false, neuralNetwork) {
       /* check if training is complete */
       /* if test is called from within training and the training is not complete yet, continue training */
       if (index >= testData.length - 1 && inTraining) {
+        neuralNetwork.setTrainingAccuracyPercent(`${((correctPredicts*100)/testData.length).toFixed(4)}%`);
         console.log(`Prediction Accuracy: ${((correctPredicts*100)/testData.length).toFixed(4)}%`)
-        train('', neuralNetwork);
+        train('',neuralNetwork )
       }     
     });
   }
@@ -65,25 +66,29 @@ const train = async (data, neuralNetwork) => {
     // TRAINING TIME
     let iter = 0;
     if (iter < iterations) {
-        iter++;
-        trainingData.forEach((current, index) => {
-          if(index % 150000 === 0){
-            console.log(`Training Data ${index} of ${trainingData.length} - Iteration ${iter} of ${iterations} - ${((100 * ((iter - 1) * trainingData.length + index))/(trainingData.length * iterations)).toFixed(4)}%`)
-          }
+      iter++;
+      trainingData.forEach((current, index) => {
+        neuralNetwork.setTrainingStatusPercent(`${((100 * ((iter - 1) * trainingData.length + index))/(trainingData.length * iterations)).toFixed(4)}%`);
+        if(index % 50000 === 0){
+          console.log(`Training Data ${index} of ${trainingData.length} - Iteration ${iter} of ${iterations} - ${((100 * ((iter - 1) * trainingData.length + index))/(trainingData.length * iterations)).toFixed(4)}%`)
+          neuralNetwork.saveState();
+        }
 
-           // Set the value expected for each as "hot" or 0.99 and the rest as 0
-           const label = trainingLabels[index];
-           const oneHotLabel = Array(10).fill(0);
-           oneHotLabel[label] = 0.99;
-    
-           neuralNetwork.train(current, oneHotLabel);
-    
-           /* check if the end of the training iteration is reached */
-           if (index === trainingData.length - 1) {
-             test(true, neuralNetwork); // true to signal "test" that it is called from within training 
-           }
-        });
-      }
+          // Set the value expected for each as "hot" or 0.99 and the rest as 0
+          const label = trainingLabels[index];
+          const oneHotLabel = Array(10).fill(0);
+          oneHotLabel[label] = 0.99;
+  
+          neuralNetwork.train(current, oneHotLabel);
+  
+          /* check if the end of the training iteration is reached */
+          if (index === trainingData.length - 1) {
+            test(true, neuralNetwork); // true to signal "test" that it is called from within training 
+            neuralNetwork.saveState();
+          }
+      });
+    }
+    console.log('Training Complete')
 }
 
 export default train

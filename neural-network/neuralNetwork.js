@@ -1,4 +1,5 @@
 import * as math from "mathjs";
+import * as fs from 'fs'
 const mmap = math.map;
 const rand = math.random;
 const transp = math.transpose;
@@ -11,17 +12,27 @@ const sum = math.sum;
 //Reference: https://javascript.plainenglish.io/make-your-own-neural-network-app-with-plain-javascript-and-a-tiny-bit-of-math-js-30ab5ff4cbd5
 
 class NeuralNetwork {
-    constructor(inputNodes, hiddenNodes /*Why?*/, outputNodes, learningRate, wih, who){
+    constructor(inputNodes, hiddenNodes, outputNodes, learningRate, wih, who){
         this.inputNodes = inputNodes;
         this.hiddenNodes = hiddenNodes;
         this.outputNodes = outputNodes;
         this.learningRate = learningRate;
-        
-        // WIH - weights of input-to-hidden layer
-        // WHO - weights of hidden-to-output layer
-        // If weights are not passed in, they will be randomly generated
-        this.wih = wih || sub(mat(rand([hiddenNodes, inputNodes])), 0.5);
-        this.who = who || sub(mat(rand([outputNodes, hiddenNodes])), 0.5);
+        this.trainingStats = {
+            trainingStatus: '0.0%',
+            currentAccuracy: '0.0%'
+          }
+        try{
+            this.loadState();
+        }
+        catch(err){
+            console.log(err)
+            // WIH - weights of input-to-hidden layer
+            // WHO - weights of hidden-to-output layer
+            // If weights are not passed in, they will be randomly generated
+            this.wih = wih || sub(mat(rand([hiddenNodes, inputNodes])), 0.5);
+            this.who = who || sub(mat(rand([outputNodes, hiddenNodes])), 0.5);
+            this.saveState();
+        }
     
         // Sigmoid Function - Applies activation function (2nd param) to each element of input matrix (1st function)
         this.act = (matrix) => mmap(matrix, (x) => 1 / (1 + Math.exp(-x)));
@@ -33,6 +44,14 @@ class NeuralNetwork {
         // Convert from 0-255 to 0.01 to 1.00 to prevent saturation in sigmoid
         return data.map((e) => (e / 255) * 0.99 + 0.01);
     };
+
+    getStats = ()=>this.trainingStats;
+    setTrainingStatusPercent = (percentage)=>{
+        this.trainingStats.trainingStatus = percentage;
+    }
+    setTrainingAccuracyPercent = (percentage)=>{
+        this.trainingStats.currentAccuracy = percentage;
+    }
 
     // Forward Propagation
     forward = (input) => { 
@@ -118,15 +137,34 @@ class NeuralNetwork {
         this.wih = e("wih + (r .* dwih)", { wih, r, dwih });
         this.who = e("who + (r .* dwho)", { who, r, dwho });
     };
+
+    saveState = ()=>{
+        // Write the current config to a file
+        fs.writeFileSync('./trainingValues.json', JSON.stringify(this));
+        console.log('State Saved')
+    }
+
+    loadState = () => {
+        let loadedState = fs.readFileSync('./trainingValues.json')
+        loadedState = JSON.parse(loadedState.toString());
+        this.wih = mat(loadedState.wih.data)
+        this.who = mat(loadedState.who.data)
+        this.trainingStats = loadedState.trainingStats;
+        console.log('State Loaded')
+    }
     
     predict = (input) => {
         return this.forward(input);
     };
     
     train = (input, target) => {
+        try{
         this.forward(input);
         this.backward(target);
-        this.update();
+        this.update(true);
+        }catch(err){
+            console.log(err)
+        }
     };
 }
 
