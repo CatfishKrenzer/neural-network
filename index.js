@@ -4,6 +4,7 @@ import http from 'http';
 import train from './functionality/train.js';
 import NeuralNetwork from './neural-network/neuralNetwork.js';
 import {Worker} from 'worker_threads';
+import cors from 'cors';
 
 const app = express();
 app.use(express.json());
@@ -19,6 +20,15 @@ const learningrate = 0.2;
 
 const worker = new Worker('./workers/trainingWorker.js');
 
+function formatPrediction(prediction) {
+  const flattened = prediction.toArray().map((x) => x[0]);
+  return flattened.indexOf(Math.max(...flattened));
+}
+
+app.use(cors({
+  origin: '*'
+}));
+
 app.post(basePath + '/train', (req, res) => {
   // const neuralNetwork = new NeuralNetwork(inputnodes, hiddennodes, outputnodes, learningrate)
   // train('', neuralNetwork)
@@ -29,7 +39,9 @@ app.post(basePath + '/train', (req, res) => {
 
 app.post(basePath + '/predict', (req, res) => {
     const neuralNetwork = new NeuralNetwork(inputnodes, hiddennodes, outputnodes, learningrate)
-    res.send(neuralNetwork.predict(req.data))
+    const normalizedData = NeuralNetwork.normalizeData(req.body.predictData);
+    const predictData = neuralNetwork.predict(normalizedData)
+    res.send({predictData, prediction: formatPrediction(predictData)})
 })
 
 app.get(basePath + '/training-status', (req, res) => {
