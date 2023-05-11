@@ -1,6 +1,6 @@
 import * as math from "mathjs";
 import * as fs from 'fs'
-import {default as loadedState} from "../trainingValues.json" assert {
+import {default as loadedState} from "./trainingValues.json" assert {
     type: 'json',
     integrity: 'sha384-ABC123'
   };
@@ -11,8 +11,6 @@ const transp = math.transpose;
 const mat = math.matrix;
 const e = math.evaluate;
 const sub = math.subtract;
-const sqr = math.square;
-const sum = math.sum;
 
 //Reference: https://javascript.plainenglish.io/make-your-own-neural-network-app-with-plain-javascript-and-a-tiny-bit-of-math-js-30ab5ff4cbd5
 
@@ -30,13 +28,13 @@ class NeuralNetwork {
             this.loadState();
         }
         catch(err){
-            console.log(err)
+            console.log('load state error', err)
             // WIH - weights of input-to-hidden layer
             // WHO - weights of hidden-to-output layer
             // If weights are not passed in, they will be randomly generated
             this.wih = wih || sub(mat(rand([hiddenNodes, inputNodes])), 0.5);
             this.who = who || sub(mat(rand([outputNodes, hiddenNodes])), 0.5);
-            this.saveState();
+            // this.saveState();
         }
     
         // Sigmoid Function - Applies activation function (2nd param) to each element of input matrix (1st function)
@@ -127,7 +125,7 @@ class NeuralNetwork {
 
         this.cache.dwih = dwih;
         this.cache.dwho = dwho;
-        this.cache.loss.push(sum(mmap(dEdA,sqr)));
+        // this.cache.loss.push(sum(mmap(dEdA,sqr)));
     };
 
     update = () => {

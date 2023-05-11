@@ -30,9 +30,6 @@ app.use(cors({
 }));
 
 app.post(basePath + '/train', (req, res) => {
-  // const neuralNetwork = new NeuralNetwork(inputnodes, hiddennodes, outputnodes, learningrate)
-  // train('', neuralNetwork)
-
   worker.postMessage('train');
   res.send({status:'Training Started'})
 })
